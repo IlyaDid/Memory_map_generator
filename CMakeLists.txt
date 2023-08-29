@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.22)
+project(Mealy_inp_seq_gen)
+find_package(Boost COMPONENTS program_options REQUIRED)
+add_compile_options(-Wall -Werror)
+add_executable(mem_map main.cpp)
+target_include_directories(mem_map PRIVATE ${Boost_INCLUDE_DIR})
+target_link_libraries(mem_map ${Boost_LIBRARIES})
