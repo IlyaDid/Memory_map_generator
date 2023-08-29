@@ -108,12 +108,14 @@ std::set<u_int64_t> mapgen(size_t seed, const script& task){
                     addr = gen64()%task.addr_ranges.size();
                     buf = gen64()%(task.addr_ranges[addr].second - task.addr_ranges[addr].first + 1) + task.addr_ranges[addr].first;
                     buf = MASK_CLEAR(buf, task.cache.line_sz - 1);
+                    //Setting bank number
                     for(size_t m = 0; m < task.cache.bnk_addr.size(); m++){
                         if(BIT_CHECK(bnk, m))
                             buf = BIT_SET(buf, task.cache.bnk_addr[m]);
                         else
                             buf = BIT_CLEAR(buf, task.cache.bnk_addr[m]);
                     }
+                    //Setting set number
                     for(size_t m = 0; m < set_addr.size(); m++){
                         if(BIT_CHECK(set, m))
                             buf = BIT_SET(buf, set_addr[m]);
