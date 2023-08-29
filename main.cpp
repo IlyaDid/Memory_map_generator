@@ -151,8 +151,22 @@ std::set<u_int64_t> mapgen(size_t seed, const script& task){
     // }
     // std::cout << bnks << " " << sets << " " << evict << std::endl;
 }
-void to_json(const std::set<u_int64_t>& buf){
-
+void to_json(const std::string& file, const std::set<u_int64_t>& buf){
+    pt::ptree root;
+    pt::ptree addr_ranges;
+    std::stringstream hex;
+    for(const auto& addr : buf){
+        pt::ptree range;
+        hex << std::hex << addr;
+        range.put("bgn", "0x" + hex.str());
+        hex.str(std::string());
+        hex << std::hex << addr + 63;
+        range.put("end", "0x" + hex.str());
+        hex.str(std::string());
+        addr_ranges.push_back(std::make_pair("", range));
+    }
+    root.add_child("addr_ranges", addr_ranges);
+    write_json(file, root);
 }
 namespace po = boost::program_options;
 int main(int argc, char *argv[]){
@@ -175,7 +189,6 @@ int main(int argc, char *argv[]){
     if(vm.count("help")){std::cerr<<desc<<std::endl;return 0;}
     po::notify(vm);
 
-    std::set<u_int64_t> buf;
     // size_t size = 0;
     // size_t sz = 0;
     // std::mt19937_64 gen64;
@@ -183,9 +196,9 @@ int main(int argc, char *argv[]){
     try{
         // gen64.seed(seed);
         task = GetTaskInfo(file);
-        buf = mapgen(seed, task);
-        for(const auto& addr : buf)
-            std::cout << "0x" << std::hex << addr << std::endl;
+        to_json(result, mapgen(seed, task));
+        // for(const auto& addr : buf)
+        //     std::cout << "0x" << std::hex << addr << std::endl;
         // for(const auto& it : task.addr_ranges)
         //     size += it.second - it.first;
         // time_t start = time(nullptr);
