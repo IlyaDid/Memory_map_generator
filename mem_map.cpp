@@ -66,7 +66,7 @@ std::set<u_int64_t> mapgen(size_t seed, const script& task){
     std::set<size_t> set_excl;
     std::set<size_t> bnk_excl;
     std::vector<size_t> set_addr;
-    for(size_t i = mylog2(task.cache.line_sz) + 1; set_addr.size() < mylog2(sets_am); i++){
+    for(size_t i = mylog2(task.cache.line_sz); set_addr.size() < mylog2(sets_am); i++){
         if(find(task.cache.bnk_addr.begin(), task.cache.bnk_addr.end(), i) == task.cache.bnk_addr.end())
             set_addr.push_back(i);
     }
@@ -87,16 +87,16 @@ std::set<u_int64_t> mapgen(size_t seed, const script& task){
                     //Setting bank number
                     for(size_t m = 0; m < task.cache.bnk_addr.size(); m++){
                         if(BIT_CHECK(bnk, m))
-                            BIT_SET(buf, task.cache.bnk_addr[m] - 1);
+                            BIT_SET(buf, task.cache.bnk_addr[m]);
                         else
-                            BIT_CLEAR(buf, task.cache.bnk_addr[m] - 1);
+                            BIT_CLEAR(buf, task.cache.bnk_addr[m]);
                     }
                     //Setting set number
                     for(size_t m = 0; m < set_addr.size(); m++){
                         if(BIT_CHECK(set, m))
-                            BIT_SET(buf, set_addr[m] - 1);
+                            BIT_SET(buf, set_addr[m]);
                         else
-                            BIT_CLEAR(buf, set_addr[m] - 1);
+                            BIT_CLEAR(buf, set_addr[m]);
                     }
                 }while(buf < task.addr_ranges[addr].first || buf > task.addr_ranges[addr].second || find(res.begin(), res.end(), buf) != res.end());
                 res.insert(buf);
