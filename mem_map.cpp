@@ -102,6 +102,7 @@ std::set<u_int64_t> mapgen(size_t seed, const script& task){
                 res.insert(buf);
             }
         }
+        set_excl.clear();
     }
     return res;
 }
