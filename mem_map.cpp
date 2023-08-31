@@ -106,7 +106,7 @@ std::set<u_int64_t> mapgen(size_t seed, const script& task){
     }
     return res;
 }
-void to_json(const std::string& file, const std::set<u_int64_t>& buf){
+void to_json(const std::string& file, const std::set<u_int64_t>& buf, const script& task){
     pt::ptree root;
     pt::ptree addr_ranges;
     std::stringstream hex;
@@ -115,7 +115,7 @@ void to_json(const std::string& file, const std::set<u_int64_t>& buf){
         hex << std::hex << addr;
         range.put("bgn", "0x" + hex.str());
         hex.str(std::string());
-        hex << std::hex << addr + 63;
+        hex << std::hex << addr + task.cache.line_sz - 1;
         range.put("end", "0x" + hex.str());
         hex.str(std::string());
         addr_ranges.push_back(std::make_pair("", range));
