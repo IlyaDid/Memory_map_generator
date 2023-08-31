@@ -11,4 +11,4 @@ public:
     script(const std::string& filename);
 };
 std::set<u_int64_t> mapgen(size_t seed, const script& task);
-void to_json(const std::string& file, const std::set<u_int64_t>& buf);
+void to_json(const std::string& file, const std::set<u_int64_t>& buf, const script& task);

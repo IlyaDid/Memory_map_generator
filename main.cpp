@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
     po::notify(vm);
     try{
         script task(file);
-        to_json(result, mapgen(seed, task));
+        to_json(result, mapgen(seed, task), task);
     }
     catch(std::runtime_error& e){
         std::cerr<<e.what()<<std::endl;
