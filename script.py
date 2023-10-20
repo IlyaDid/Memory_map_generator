@@ -82,7 +82,7 @@ def mapgen(seed: int, task: Script):
         i += 1
     for j in range(0, bnks):
         bnk = random.randint(low=0, high=bnk_am)
-        while str(bnk) in bnk_excl:
+        while bnk in bnk_excl:
             bnk = (bnk + 1) % bnk_am
         bnk_excl.append(bnk)
         for k in range(0, sets):
