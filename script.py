@@ -10,7 +10,7 @@ def MASK_CLEAR(buf, pos):
 
 
 def BIT_CHECK(buf, pos):
-    return not (not (buf & (1 << pos)))
+    return not (not buf & (1 << pos))
 
 
 def BIT_SET(buf, pos):
@@ -95,17 +95,17 @@ def mapgen(seed: int, task: Script):
                     addr = random.randint(low=0, high=len(task.addr_ranges))
                     buf = random.randint(2**64, dtype=uint64) % (task.addr_ranges[addr][1] - task.addr_ranges[addr][0] + 1) + task.addr_ranges[addr][0]
                     buf = MASK_CLEAR(int(buf), task.cache.line_sz - 1)
-                    for l in task.cache.bnk_addr:
+                    for l in range(0, len(task.cache.bnk_addr)):
                         if BIT_CHECK(bnk, l):
-                            buf = BIT_SET(buf, l)
+                            buf = BIT_SET(buf, task.cache.bnk_addr[l])
                         else:
-                            buf = BIT_CLEAR(buf, l)
-                    for n in set_addr:
+                            buf = BIT_CLEAR(buf, task.cache.bnk_addr[l])
+                    for n in range(0, len(set_addr)):
                         if BIT_CHECK(set, n):
-                            buf = BIT_SET(buf, n)
+                            buf = BIT_SET(buf, set_addr[n])
                         else:
-                            buf = BIT_CLEAR(buf, n)
-                    if task.addr_ranges[addr][0] <= buf <= task.addr_ranges[addr][1] and buf not in res:
+                            buf = BIT_CLEAR(buf, set_addr[n])
+                    if task.addr_ranges[addr][0] <= buf and buf + task.cache.line_sz - 1 <= task.addr_ranges[addr][1] and buf not in res:
                         break
                 res.append(buf)
         set_excl.clear()
