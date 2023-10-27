@@ -12,7 +12,7 @@ def MASK_CLEAR(buf, pos):
 
 
 def BIT_CHECK(buf, pos):
-    return not (not (buf & (1 << pos)))
+    return bool(buf & (1 << pos))
 
 
 def BIT_SET(buf, pos):
