@@ -1,3 +1,5 @@
+import sys
+
 from numpy import random, uint64
 from ast import literal_eval
 from json import JSONDecodeError, dump, load
@@ -45,17 +47,64 @@ def script(filename):
         with open(filename) as file_object:
             data = load(file_object)
     except JSONDecodeError as e:
-        print(e.msg)
-    cache = Cache(data["cache_descr"]["line_size"],
-                  data["cache_descr"]["associativity"],
-                  data["cache_descr"]["cache_size"],
-                  data["cache_descr"]["bnk_addr_bits"])
+        print(e.msg, sys.stderr)
+        exit(1)
+    if int(data['cache_descr']['line_size']) % 2 != 0 or int(data['cache_descr']['line_size']) <= 0:
+        print('ERROR: Cache line size must be degree of 2 and larger than 1', sys.stderr)
+        exit(2)
+    if int(data['cache_descr']['associativity']) % 2 != 0 or int(data['cache_descr']['associativity']) <= 0:
+        print('ERROR: Cache associativity must be degree of 2 and larger than 1', sys.stderr)
+        exit(2)
+    if int(data['cache_descr']['cache_size']) % 2 != 0 or int(data['cache_descr']['cache_size']) <= 0:
+        print('ERROR: Cache size must be degree of 2 and larger than 1', sys.stderr)
+        exit(2)
+    for bit in data['cache_descr']['bnk_addr_bits']:
+        if int(bit) < 0:
+            print('ERROR: Bank address bit must be a non negative number', sys.stderr)
+            exit(2)
+        if int(bit) > 63:
+            print('ERROR: Bank address bit out of address range', sys.stderr)
+            exit(2)
+        if int(bit) < log2(int(data['cache_descr']['cache_size'] / len(data['cache_descr']['bnk_addr_bits']) / data['cache_descr']['associativity'] / data['cache_descr']['line_size'])):
+            print('ERROR: Bank bits overlap data bits', sys.stderr)
+            exit(2)
+    cache = Cache(data['cache_descr']['line_size'],
+                  data['cache_descr']['associativity'],
+                  data['cache_descr']['cache_size'],
+                  data['cache_descr']['bnk_addr_bits'])
     addr_ranges = []
-    for addr in data["addr_ranges"]:
-        addr_ranges.append([int(literal_eval(addr['bgn'])), int(literal_eval(addr['end']))])
+    for addr in data['addr_ranges']:
+        try:
+            addr_ranges.append([int(literal_eval(addr['bgn'])), int(literal_eval(addr['end']))])
+        except Exception:
+            print('ERROR: Wrong addr_ranges format', sys.stderr)
+            exit(2)
+        if addr_ranges[len(addr_ranges) - 1][0] < 0 or addr_ranges[len(addr_ranges) - 1][1] < 0:
+            print('ERROR: Addr_ranges must be a non negative number')
+            exit(2)
+        if addr_ranges[len(addr_ranges) - 1][1] - addr_ranges[len(addr_ranges) - 1][0] <= 0:
+            print('ERROR: Addr_range must have a positive length', sys.stderr)
+            exit(2)
+        if int(literal_eval(addr['end']) - int(literal_eval(addr['bgn']))) < data['lines_assoc_coeff'] * data['set_range']['max'] * data['bnk_range']['max'] * data['cache_descr']['line_size']:
+            print('WARNING: Addr range ' + str(len(addr_ranges) - 1) + ' may not be able to contain all generated addresses on some seeds. Decrease maximum bank/set amounts or increase length of this address range', sys.stderr)
     set_range = [int(data['set_range']['min']), int(data['set_range']['max'])]
+    if set_range[0] < 0 or set_range[1] < 0:
+        print('ERROR: Set_range borders must be positive numbers', sys.stderr)
+        exit(2)
+    if set_range[1] - set_range[0] < 0:
+        print('ERROR: Set_range must be non negative', sys.stderr)
+        exit(2)
     bnk_range = [int(data['bnk_range']['min']), int(data['bnk_range']['max'])]
-    return Script(cache, addr_ranges, set_range, bnk_range, data["lines_assoc_coeff"])
+    if bnk_range[0] < 0 or bnk_range[1] < 0:
+        print('ERROR: Bnk_range borders must be positive numbers', sys.stderr)
+        exit(2)
+    if bnk_range[1] - bnk_range[0] < 0:
+        print('ERROR: Bnk_range must be non negative', sys.stderr)
+        exit(2)
+    if data['lines_assoc_coeff'] <= 0:
+        print('ERROR: Lines_assoc_coeff must be a positive number')
+        exit(2)
+    return Script(cache, addr_ranges, set_range, bnk_range, data['lines_assoc_coeff'])
 
 
 def mapgen(seed: int, task: Script):
@@ -93,6 +142,12 @@ def mapgen(seed: int, task: Script):
             for m in range(0, lines_am):
                 while 1:
                     addr = random.randint(low=0, high=len(task.addr_ranges))
+                    if task.addr_ranges[addr][1] - task.addr_ranges[addr][0] < task.lines_coeff * sets_am * bnk_am * task.cache.line_sz:
+                        print('ERROR: Can not fit addresses in address range ' + str(addr), sys.stderr)
+                        exit(3)
+                    if int((task.addr_ranges[addr][1] - task.addr_ranges[addr][0]) / task.cache.line_sz / bnk_am / sets_am) < lines_am:
+                        print('ERROR: Addr range ' + str(addr) + ' can not fit needed amount of addresses')
+                        exit(3)
                     buf = random.randint(2**64, dtype=uint64) % (task.addr_ranges[addr][1] - task.addr_ranges[addr][0] + 1) + task.addr_ranges[addr][0]
                     buf = MASK_CLEAR(int(buf), task.cache.line_sz - 1)
                     for l in range(0, len(task.cache.bnk_addr)):

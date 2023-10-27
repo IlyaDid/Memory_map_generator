@@ -13,3 +13,5 @@ args = parser.parse_args()
 
 s = script(args.file)
 to_json(args.result, mapgen(args.seed, s), s)
+
+exit(0)
